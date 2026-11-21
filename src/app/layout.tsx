@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Iceberg, Outfit } from "next/font/google";
+import { Montserrat, Outfit } from "next/font/google";
 import { getLocale } from "@/i18n/locale";
 import { messages } from "@/i18n/messages";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
-const iceberg = Iceberg({ weight: "400", subsets: ["latin"], variable: "--font-iceberg" });
+const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat", weight: ["500", "700", "800"] });
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className={`${outfit.variable} ${iceberg.variable} min-h-screen bg-[#F7FCFF] text-[#073B69] antialiased`}>
+      <body className={`${outfit.variable} ${montserrat.variable} min-h-screen bg-[#F7FCFF] text-[#073B69] antialiased`}>
         {children}
       </body>
     </html>

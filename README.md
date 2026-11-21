@@ -53,7 +53,7 @@ Sin `DATABASE_URL`, la base local es PGlite en `.data/pglite`. En el entorno pub
 
 ## Identidad visual
 
-No se recibieron los archivos de imagen de referencia dentro del proyecto. La portada usa una escena de montaña en CSS y SVG, tipografía Iceberg y Outfit (SIL Open Font License, servidas por Google Fonts) y un wordmark tipográfico **REM**. No se reconstruyó un logotipo protegido. El organizador puede subir el logotipo autorizado en PNG o JPEG desde `/admin/documentos`.
+La cabecera usa el isotipo y el logotipo publicados en [matrimoniosrem.com](https://matrimoniosrem.com). El lema del evento usa letras de hielo, en el estilo de los afiches entregados para Denver. Las fotografías de la portada son imágenes de referencia del invierno en Denver y sus montañas; no son fotos del lugar exacto del encuentro. La interfaz usa Montserrat y Outfit, ambas con licencia SIL Open Font License. El organizador puede sustituir el logotipo desde `/admin/documentos` si entrega otro archivo autorizado.
 
 ## Lo que queda pendiente de configuración
 

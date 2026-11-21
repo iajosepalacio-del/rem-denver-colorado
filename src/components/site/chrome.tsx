@@ -49,22 +49,20 @@ export function Mountains() {
   );
 }
 
-export function SiteHeader({ locale, tone = "dark" }: { locale: Locale; tone?: "dark" | "light" }) {
+export function SiteHeader({ locale }: { locale: Locale; tone?: "dark" | "light" }) {
   const copy = messages[locale];
-  const dark = tone === "dark";
   return (
-    <header className={`relative z-20 ${dark ? "text-[#F7FCFF]" : "border-b border-[#C5E4F2] bg-[#F7FCFF] text-[#073B69]"}`}>
+    <header className="relative z-20 bg-[#04182C] text-[#F7FCFF]">
       <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-3 focus:py-2 focus:text-[#073B69]">
         {copy.skip}
       </a>
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="min-w-0">
-          <span className={`block font-[family-name:var(--font-iceberg)] text-3xl leading-none tracking-[0.14em] ${dark ? "text-white" : "text-[#073B69]"}`}>REM</span>
-          <span className={`block text-xs ${dark ? "text-[#D7F6FF]" : "text-[#1A4468]"}`}>Reto de Empoderamiento Matrimonial</span>
+          <img src="/brand/rem-logo.png" alt="REM, Reto de Empoderamiento Matrimonial" className="h-12 w-auto sm:h-16" />
         </Link>
         <nav className="flex items-center gap-2 text-sm sm:gap-4">
           <Link className="hidden rounded-full px-3 py-2 underline-offset-4 hover:underline sm:inline" href="/consultar">{copy.navConsult}</Link>
-          <LocaleToggle locale={locale} label={copy.lang} dark={dark} />
+          <LocaleToggle locale={locale} label={copy.lang} dark />
         </nav>
       </div>
     </header>
@@ -87,8 +85,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     <footer className="border-t border-white/15 bg-[#041E36] px-4 py-10 text-[#F7FCFF]">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-[family-name:var(--font-iceberg)] text-2xl tracking-[0.12em]">REM</p>
-          <p className="mt-1 max-w-md text-[#D7F6FF]">Reto de Empoderamiento Matrimonial. Denver, Colorado.</p>
+          <img src="/brand/rem-logo.png" alt="" className="h-12 w-auto" />
+          <p className="mt-2 max-w-md text-[#D7F6FF]">Reto de Empoderamiento Matrimonial. Denver, Colorado.</p>
         </div>
         <nav className="flex flex-wrap gap-x-4 gap-y-2">
           <Link href="/privacidad">{copy.navPrivacy}</Link>

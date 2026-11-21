@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-[#C5E4F2] bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-[family-name:var(--font-iceberg)] text-2xl tracking-[0.12em]">REM</p>
+            <img src="/brand/rem-logo.png" alt="REM, Reto de Empoderamiento Matrimonial" className="h-12 w-auto rounded-lg bg-[#04182C] px-2 py-1" />
             <p className="text-sm text-[#1A4468]">{admin.name} · {admin.role}</p>
           </div>
           <nav className="flex flex-wrap gap-2 text-sm">

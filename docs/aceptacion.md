@@ -5,7 +5,7 @@ Estado de esta entrega. Una fila «comprobado» corresponde a una prueba automá
 | Requisito | Estado |
 | --- | --- |
 | Portada en español, eslogan, fechas y lugar configurables | El HTML de inicio incluye el eslogan, el subtítulo, Denver y los dos botones del hero |
-| Tipografía legal (Iceberg y Outfit) y wordmark REM | Entregado. No había archivos de logotipo en el proyecto |
+| Logotipo oficial y letras de hielo | La cabecera usa el isotipo publicado en matrimoniosrem.com. El lema usa letras de hielo. La portada incluye imágenes de referencia del invierno en Denver |
 | Nieve con respeto a `prefers-reduced-motion` | La animación está en CSS y se apaga con esa preferencia |
 | Inscripción por pareja, código público distinto del id interno | Prueba automática y recorrido HTTP: se creó `REM-2027-0005` con correos `@example.com` |
 | Una pareja no lee datos de otra | Prueba automática. El acceso con un correo ajeno y la clave correcta respondió 401 |
