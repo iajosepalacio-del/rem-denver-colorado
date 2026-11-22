@@ -26,11 +26,21 @@ const client = new pg.Client({
 });
 await client.connect();
 try {
+  const who = await client.query("select current_user as user");
+  console.log(`migrate: connected as ${who.rows[0]?.user ?? "unknown"}`);
   await client.query("set lock_timeout = '60s'");
   await client.query("select pg_advisory_lock(7272741)");
-  await client.query(
-    "create table if not exists schema_migrations (name text primary key, applied_at timestamptz not null default now())",
-  );
+  try {
+    await client.query(
+      "create table if not exists schema_migrations (name text primary key, applied_at timestamptz not null default now())",
+    );
+  } catch (error) {
+    if (error && error.code === "42501") {
+      console.log("migrate: skipped (injected role cannot create tables; Netlify applies schema as owner)");
+      process.exit(0);
+    }
+    throw error;
+  }
   const done = new Set(
     (await client.query("select name from schema_migrations")).rows.map((row) => row.name),
   );

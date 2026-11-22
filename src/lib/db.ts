@@ -110,11 +110,27 @@ async function applyPostgresMigrations(client: { query: (text: string, params?: 
   }
 }
 
+function isPermissionDenied(error: unknown) {
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "42501");
+}
+
+async function schemaReady(client: { query: (text: string) => Promise<{ rows: unknown[] }> }) {
+  const rows = (await client.query(
+    "select 1 from information_schema.tables where table_schema = 'public' and table_name = 'events'",
+  )).rows;
+  return rows.length > 0;
+}
+
 async function ensurePostgres() {
   globalState.__remPgReady ??= (async () => {
     const client = await pool().connect();
     try {
       await applyPostgresMigrations(client);
+    } catch (error) {
+      if (isPermissionDenied(error) && (await schemaReady(client))) {
+        return;
+      }
+      throw error;
     } finally {
       client.release();
     }
