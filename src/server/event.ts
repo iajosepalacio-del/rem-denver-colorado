@@ -6,6 +6,7 @@ import {
   OFFICIAL_SEMAFORO_URL,
   OFFICIAL_SITE,
   ORGANIZER_EMAIL,
+  PACKAGES,
   type PackingItem,
 } from "../lib/catalog";
 import { sql } from "../lib/db";
@@ -25,6 +26,7 @@ export type EventConfig = {
   eventYear: number;
   currency: string;
   priceCents: number;
+  hotelPriceCents: number;
   priceConfigured: boolean;
   shirtSizes: string[];
   jacketSizes: string[];
@@ -73,6 +75,7 @@ export function mapEvent(row: Record<string, unknown>): EventConfig {
     eventYear: Number(row.event_year),
     currency: String(row.currency),
     priceCents: Number(row.price_cents),
+    hotelPriceCents: Number(row.hotel_price_cents ?? PACKAGES.hotel.cents),
     priceConfigured: row.price_configured === true,
     shirtSizes: asJson<string[]>(row.shirt_sizes, DEFAULT_SHIRT_SIZES),
     jacketSizes: asJson<string[]>(row.jacket_sizes, DEFAULT_JACKET_SIZES),
@@ -94,15 +97,15 @@ export async function ensureEvent() {
   await sql(
     `insert into events (
       id, name, brand, slogan, subtitle, emotional_line, city, region, country,
-      starts_on, ends_on, event_year, currency, price_cents, price_configured,
+      starts_on, ends_on, event_year, currency, price_cents, hotel_price_cents, price_configured,
       shirt_sizes, jacket_sizes, packing_items, semaforo_mode, semaforo_external_url,
       semaforo_per_spouse, semaforo_group_size, waiver_requires_both, official_site,
       organizer_email, retention_months
     ) values (
       $1, $2, $3, $4, $5, $6, $7, $8, $9,
-      $10, $11, $12, 'USD', 0, false,
-      $13::jsonb, $14::jsonb, $15::jsonb, 'external', $16,
-      true, 1, true, $17, $18, 24
+      $10, $11, $12, 'USD', $13, $14, true,
+      $15::jsonb, $16::jsonb, $17::jsonb, 'external', $18,
+      true, 1, true, $19, $20, 24
     )`,
     [
       EVENT_ID,
@@ -117,6 +120,8 @@ export async function ensureEvent() {
       "2027-01-23",
       "2027-01-24",
       2027,
+      PACKAGES.general.cents,
+      PACKAGES.hotel.cents,
       JSON.stringify(DEFAULT_SHIRT_SIZES),
       JSON.stringify(DEFAULT_JACKET_SIZES),
       JSON.stringify(DEFAULT_PACKING),

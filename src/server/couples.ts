@@ -1,4 +1,4 @@
-import { EVENT_ID } from "../lib/catalog";
+import { EVENT_ID, PACKING_OWNER_ROLE, type PackageKind } from "../lib/catalog";
 import { sql, transaction } from "../lib/db";
 import { asBuffer } from "../lib/files";
 import { assess, balanceCents, formatPublicCode, sumVerified, type AssessInput } from "../lib/progress";
@@ -7,6 +7,7 @@ import type { CoupleView, SpouseRole, SpouseView } from "../lib/types";
 import { getEvent, type EventConfig } from "./event";
 import { syncBinary, syncCoupleSnapshot, driveMode } from "./drive";
 import { accessMessage, completionMessage, deliverEmail, mailConfigured } from "./mail";
+import { stampWaiverExample } from "./pdf";
 import { signatureConfigured, signatureProviderName, createSignatureEnvelope } from "./signature";
 
 type SpouseInput = {
@@ -293,8 +294,12 @@ export async function assemble(coupleId: string, locale: "es" | "en"): Promise<C
   }));
   const verifiedPaid = sumVerified(paymentViews);
   const override = finance.price_override_cents == null ? null : Number(finance.price_override_cents);
+  const packageKind: CoupleView["finance"]["packageKind"] =
+    finance.package_kind === "hotel" || finance.package_kind === "general" ? finance.package_kind : "";
   const priceConfigured = override != null || event.priceConfigured;
-  const totalCents = override != null ? override : event.priceCents;
+  const billed = override != null || packageKind !== "";
+  const catalogTotal = packageKind === "hotel" ? event.hotelPriceCents : event.priceCents;
+  const totalCents = override != null ? override : catalogTotal;
   const questions = Number(questionCountRows[0]?.n ?? 0);
   const semaforoReady =
     event.semaforoMode === "external"
@@ -340,6 +345,7 @@ export async function assemble(coupleId: string, locale: "es" | "en"): Promise<C
   const input: AssessInput = {
     personalComplete: Boolean(esposo.fullName && esposa.fullName && esposo.email && esposa.email && couple.city && couple.country),
     modality: finance.modality === "total" || finance.modality === "cuotas" ? finance.modality : "",
+    packageSelected: billed,
     priceConfigured,
     totalCents,
     verifiedPaidCents: verifiedPaid,
@@ -350,8 +356,8 @@ export async function assemble(coupleId: string, locale: "es" | "en"): Promise<C
     waiverStatuses: [esposo.waiverStatus, esposa.waiverStatus] as AssessInput["waiverStatuses"],
     semaforoReady,
     semaforoStatuses,
-    packingAcks: [esposo, esposa].filter((spouse) => spouse.packingAck).length,
-    packingPeople: 2,
+    packingAcks: esposa.packingAck ? 1 : 0,
+    packingPeople: 1,
   };
   const progress = assess(input);
   const driveStatus = driveState(driveRows[0]?.status);
@@ -375,10 +381,12 @@ export async function assemble(coupleId: string, locale: "es" | "en"): Promise<C
       currency: event.currency,
       priceConfigured,
       totalCents,
+      packageKind,
+      packages: { general: event.priceCents, hotel: event.hotelPriceCents },
       modality: input.modality,
       claimPaidInFull: bool(finance.claim_paid_in_full),
       paidCents: verifiedPaid,
-      balanceCents: priceConfigured ? balanceCents(totalCents, verifiedPaid) : null,
+      balanceCents: priceConfigured && billed ? balanceCents(totalCents, verifiedPaid) : null,
       lastPaymentOn: lastVerified(paymentViews),
       adminNotes: String(finance.admin_notes ?? ""),
       payments: paymentViews,
@@ -496,6 +504,7 @@ function snapshotJson(view: CoupleView) {
     progress: view.progress.percent,
     finance: {
       modality: view.finance.modality,
+      packageKind: view.finance.packageKind,
       totalCents: view.finance.priceConfigured ? view.finance.totalCents : null,
       paidCents: view.finance.paidCents,
       balanceCents: view.finance.balanceCents,
@@ -596,12 +605,29 @@ export async function updatePersonal(
   return { view: await syncView(coupleId, "es") };
 }
 
-export async function setModality(coupleId: string, modality: "total" | "cuotas", claimPaidInFull: boolean) {
+export async function setPackageKind(coupleId: string, packageKind: PackageKind) {
+  await sql(
+    `update financial_accounts set package_kind = $2, updated_at = now() where couple_id = $1`,
+    [coupleId, packageKind],
+  );
+  await sql(`update registrations set last_step = 'pagos', updated_at = now() where couple_id = $1`, [coupleId]);
+  return syncView(coupleId, "es");
+}
+
+export async function setModality(
+  coupleId: string,
+  modality: "total" | "cuotas",
+  claimPaidInFull: boolean,
+  packageKind?: PackageKind,
+) {
   await sql(
     `update financial_accounts
-     set modality = $2, claim_paid_in_full = $3, updated_at = now()
+     set modality = $2,
+         claim_paid_in_full = $3,
+         package_kind = coalesce($4, package_kind),
+         updated_at = now()
      where couple_id = $1`,
-    [coupleId, modality, modality === "total" ? claimPaidInFull : false],
+    [coupleId, modality, modality === "total" ? claimPaidInFull : false, packageKind ?? null],
   );
   await sql(`update registrations set last_step = 'pagos', updated_at = now() where couple_id = $1`, [coupleId]);
   return syncView(coupleId, "es");
@@ -723,6 +749,71 @@ export async function startSignature(coupleId: string, participantId: string) {
   return { view, signingUrl: envelope.signingUrl };
 }
 
+export async function signWaiverExample(
+  coupleId: string,
+  input: { participantId: string; signedName: string; printedName: string; signedOn: string },
+) {
+  const people = await sql<Record<string, unknown>>(
+    "select id, full_name, role from participants where id = $1 and couple_id = $2",
+    [input.participantId, coupleId],
+  );
+  const person = people[0];
+  const templates = await sql<Record<string, unknown>>(
+    `select id, version, file_name, mime, content from document_templates
+     where event_id = $1 and kind = 'waiver' and active = true
+     order by created_at desc limit 1`,
+    [EVENT_ID],
+  );
+  const template = templates[0];
+  if (!person || !template?.content) return { error: "no_configurado" as const };
+  const couple = await sql<{ public_code: string }>("select public_code from couples where id = $1", [coupleId]);
+  const stamped = await stampWaiverExample(asBuffer(template.content), {
+    signedName: input.signedName,
+    printedName: input.printedName,
+    signedOn: input.signedOn,
+    coupleCode: couple[0]?.public_code ?? coupleId,
+    role: String(person.role),
+    participantName: String(person.full_name),
+  });
+  await sql(
+    `update document_signatures
+     set status = 'firmado',
+         method = 'formulario',
+         provider = '',
+         provider_ref = '',
+         version = $3,
+         template_id = $4,
+         signed_name = $5,
+         signed_mime = 'application/pdf',
+         signed_size = $6,
+         signed_content = $7,
+         note = 'Ejemplo provisional. Name Signature, Name Print y Date.',
+         updated_at = now()
+     where participant_id = $1 and couple_id = $2`,
+    [
+      input.participantId,
+      coupleId,
+      String(template.version),
+      String(template.id),
+      input.printedName,
+      stamped.length,
+      stamped,
+    ],
+  );
+  const view = await syncView(coupleId, "es");
+  await syncBinary({
+    coupleId,
+    code: view.code,
+    localKind: "waiver",
+    localId: input.participantId,
+    folder: "waiver",
+    name: `waiver-firmado-${view.code}-${person.role}.pdf`,
+    mime: "application/pdf",
+    bytes: stamped,
+  });
+  return { view, signingUrl: null as string | null };
+}
+
 export async function applySignatureWebhook(envelopeId: string, status: "signed" | "rejected") {
   const rows = await sql<{ participant_id: string; couple_id: string }>(
     `select participant_id, couple_id from document_signatures where provider_ref = $1 and method = 'proveedor'`,
@@ -755,7 +846,12 @@ export async function signedWaiverFile(coupleId: string, participantId: string) 
   );
   const row = rows[0];
   if (!row?.signed_content || row.status !== "firmado") return null;
-  return { name: String(row.signed_name), mime: String(row.signed_mime), bytes: asBuffer(row.signed_content) };
+  const rawName = String(row.signed_name ?? "waiver-firmado.pdf");
+  return {
+    name: rawName.toLowerCase().endsWith(".pdf") ? rawName : "waiver-firmado.pdf",
+    mime: String(row.signed_mime ?? "application/pdf"),
+    bytes: asBuffer(row.signed_content),
+  };
 }
 
 export async function markExternalOpened(coupleId: string, participantId: string) {
@@ -892,29 +988,45 @@ export async function questionsForCouple(coupleId: string, participantId: string
   };
 }
 
-export async function togglePack(coupleId: string, participantId: string, itemKey: string, checked: boolean) {
-  const owned = await sql("select id from participants where id = $1 and couple_id = $2", [participantId, coupleId]);
-  if (!owned[0]) return null;
+export async function togglePack(
+  coupleId: string,
+  participantId: string,
+  itemKey: string,
+  checked: boolean,
+): Promise<{ view: CoupleView } | { error: "prohibido" | "no_encontrado" }> {
+  const owned = await sql<{ id: string; role: string }>(
+    "select id, role from participants where id = $1 and couple_id = $2",
+    [participantId, coupleId],
+  );
+  if (!owned[0]) return { error: "no_encontrado" as const };
+  if (owned[0].role !== PACKING_OWNER_ROLE) return { error: "prohibido" as const };
   const event = await getEvent();
-  if (!event.packingItems.some((item) => item.key === itemKey)) return null;
+  if (!event.packingItems.some((item) => item.key === itemKey)) return { error: "no_encontrado" as const };
   await sql(
     `insert into packing_checks (participant_id, couple_id, item_key, checked) values ($1, $2, $3, $4)
      on conflict (participant_id, item_key) do update set checked = excluded.checked, updated_at = now()`,
     [participantId, coupleId, itemKey, checked],
   );
-  return syncView(coupleId, "es");
+  return { view: await syncView(coupleId, "es") };
 }
 
-export async function acknowledgePack(coupleId: string, participantId: string) {
-  const owned = await sql("select id from participants where id = $1 and couple_id = $2", [participantId, coupleId]);
-  if (!owned[0]) return null;
+export async function acknowledgePack(
+  coupleId: string,
+  participantId: string,
+): Promise<{ view: CoupleView } | { error: "prohibido" | "no_encontrado" }> {
+  const owned = await sql<{ id: string; role: string }>(
+    "select id, role from participants where id = $1 and couple_id = $2",
+    [participantId, coupleId],
+  );
+  if (!owned[0]) return { error: "no_encontrado" as const };
+  if (owned[0].role !== PACKING_OWNER_ROLE) return { error: "prohibido" as const };
   await sql(
     `insert into packing_acks (participant_id, couple_id) values ($1, $2)
      on conflict (participant_id) do update set acknowledged_at = now()`,
     [participantId, coupleId],
   );
   await sql(`update registrations set last_step = 'maleta', updated_at = now() where couple_id = $1`, [coupleId]);
-  return syncView(coupleId, "es");
+  return { view: await syncView(coupleId, "es") };
 }
 
 export async function requestDeletion(coupleId: string) {

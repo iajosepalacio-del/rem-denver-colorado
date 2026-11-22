@@ -238,6 +238,7 @@ export function EventScreen() {
             eventYear: Number(data.get("eventYear")),
             currency: data.get("currency"),
             price: Number(data.get("price")),
+            hotelPrice: Number(data.get("hotelPrice")),
             priceConfigured: data.get("priceConfigured") === "on",
             shirtSizes: String(data.get("shirtSizes")).split(",").map((item) => item.trim()).filter(Boolean),
             jacketSizes: String(data.get("jacketSizes")).split(",").map((item) => item.trim()).filter(Boolean),
@@ -266,8 +267,9 @@ export function EventScreen() {
       <label>Fin<Input className="h-12" type="date" name="endsOn" defaultValue={event.endsOn} /></label>
       <label>Año<Input className="h-12" name="eventYear" type="number" defaultValue={event.eventYear} /></label>
       <label>Moneda<Input className="h-12" name="currency" defaultValue={event.currency} maxLength={3} /></label>
-      <label>Precio<input className="h-12 w-full rounded-lg border px-3" name="price" type="number" step="0.01" defaultValue={event.priceConfigured ? event.priceCents / 100 : ""} placeholder="Sin configurar" /></label>
-      <label className="flex gap-2"><input type="checkbox" name="priceConfigured" defaultChecked={event.priceConfigured} /> El precio ya es oficial</label>
+      <label>Tarifa general USD<input className="h-12 w-full rounded-lg border px-3" name="price" type="number" step="0.01" defaultValue={event.priceCents / 100} /></label>
+      <label>Paquete con hotel USD<input className="h-12 w-full rounded-lg border px-3" name="hotelPrice" type="number" step="0.01" defaultValue={event.hotelPriceCents / 100} /></label>
+      <label className="flex gap-2"><input type="checkbox" name="priceConfigured" defaultChecked={event.priceConfigured} /> Los precios ya son oficiales</label>
       <label>Tallas de camiseta<Input className="h-12" name="shirtSizes" defaultValue={event.shirtSizes.join(", ")} /></label>
       <label>Tallas de chaqueta<Input className="h-12" name="jacketSizes" defaultValue={event.jacketSizes.join(", ")} /></label>
       <label>SEMÁFORO

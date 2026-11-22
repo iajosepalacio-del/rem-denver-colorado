@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CALLING_CODES, COUNTRIES, PAYMENT_METHODS } from "./catalog";
+import { CALLING_CODES, COUNTRIES, PACKAGE_KINDS, PAYMENT_METHODS } from "./catalog";
 
 const phoneCode = z.string().regex(/^\+\d{1,4}$/);
 
@@ -56,6 +56,18 @@ export const accessSchema = z.object({
 export const modalitySchema = z.object({
   modality: z.enum(["total", "cuotas"]),
   claimPaidInFull: z.boolean(),
+  packageKind: z.enum(PACKAGE_KINDS).optional(),
+});
+
+export const packageKindSchema = z.object({
+  packageKind: z.enum(PACKAGE_KINDS),
+});
+
+export const waiverSignSchema = z.object({
+  participantId: z.string().min(8).max(80),
+  signedName: z.string().trim().min(3).max(120),
+  printedName: z.string().trim().min(3).max(120),
+  signedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
 export const paymentSchema = z.object({
@@ -121,6 +133,7 @@ export const eventConfigSchema = z.object({
   eventYear: z.number().int().min(2024).max(2100),
   currency: z.string().trim().length(3),
   price: z.number().min(0).max(1000000),
+  hotelPrice: z.number().min(0).max(1000000),
   priceConfigured: z.boolean(),
   shirtSizes: z.array(z.string().trim().min(1).max(40)).min(1).max(30),
   jacketSizes: z.array(z.string().trim().min(1).max(40)).min(1).max(30),

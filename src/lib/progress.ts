@@ -28,6 +28,7 @@ export type WaiverMark = "sin_configuracion" | "pendiente" | "enviado" | "firmad
 export type AssessInput = {
   personalComplete: boolean;
   modality: "" | "total" | "cuotas";
+  packageSelected: boolean;
   priceConfigured: boolean;
   totalCents: number;
   verifiedPaidCents: number;
@@ -110,7 +111,19 @@ export function assess(input: AssessInput): ProgressResult {
   };
 }
 
+export function shouldEmbedCertificateQr(percent: number, status: RegistrationStatus) {
+  return percent === 100 && status === "completado";
+}
+
 function paymentProgress(input: AssessInput): ProgressBlock {
+  if (!input.packageSelected) {
+    return {
+      key: "payment",
+      applicable: true,
+      state: input.modality ? "en_proceso" : "pendiente",
+      ratio: input.modality ? 0.15 : 0,
+    };
+  }
   if (!input.modality) {
     return { key: "payment", applicable: true, state: "pendiente", ratio: 0 };
   }

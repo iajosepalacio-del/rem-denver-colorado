@@ -10,10 +10,13 @@ Estado de esta entrega. Una fila «comprobado» corresponde a una prueba automá
 | Inscripción por pareja, código público distinto del id interno | Prueba automática y recorrido HTTP: se creó `REM-2027-0005` con correos `@example.com` |
 | Una pareja no lee datos de otra | Prueba automática. El acceso con un correo ajeno y la clave correcta respondió 401 |
 | Casilla de pago no reduce el saldo | Prueba automática y recorrido HTTP: un pago de 150 USD quedó en 0 hasta verificarlo |
-| Sin precio oficial el pago no queda completo | Prueba automática. El alta deja `priceConfigured` en falso |
+| Sin paquete elegido el pago no queda completo | Prueba automática. El alta deja el paquete vacío aunque los precios oficiales ya existen |
+| TARIFA GENERAL $1,080 y PAQUETE CON HOTEL $1,280 | Los dos montos quedan en el evento y la pareja elige uno |
 | Carta «no» cuenta como no aplica | Prueba automática y recorrido HTTP: el estado quedó `no_aplica` |
 | Archivos que no son PDF, JPG o PNG se rechazan | Prueba automática. Un PNG mínimo sí se adjuntó al pago |
-| Waiver sin PDF | `GET /api/waiver` respondió 404. No se firmó nada |
+| Waiver de ejemplo provisional | El PDF Shipping Waiver se sella con Name Signature, Name Print y Date. No se presenta como firma notarial |
+| Maleta solo esposa | El esposo recibe `prohibido`. La esposa confirma la lista |
+| QR en constancia | Solo si el progreso es 100% y el estado es `completado` |
 | SEMÁFORO externo, sin preguntas inventadas | Abrir el enlace dejó el estado en `en_proceso`, no en completado |
 | SEMÁFORO interno y clave por cónyuge | La prueba automática impide que una clave lea las respuestas del otro. Falta el JSON oficial |
 | Maleta y constancia | La confirmación de la lista y `GET /api/constancia` devolvieron el estado y un PDF |

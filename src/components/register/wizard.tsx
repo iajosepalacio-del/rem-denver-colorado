@@ -160,11 +160,25 @@ function PayStep({ view, copy, locale, onView, onError }: { view: CoupleView; co
   return (
     <section className="grid gap-4 rounded-3xl border border-[#C5E4F2] bg-white p-4">
       <h2 className="text-2xl">{copy.financeTitle}</h2>
+      <fieldset className="grid gap-2 rounded-2xl bg-[#F7FCFF] p-3">
+        <legend className="font-semibold">{copy.packageTitle}</legend>
+        {(["general", "hotel"] as const).map((kind) => (
+          <label key={kind} className="flex min-h-11 items-center gap-2">
+            <input
+              type="radio"
+              name="package"
+              checked={view.finance.packageKind === kind}
+              onChange={() => savePackage(kind, onView, onError, copy)}
+            />
+            <span>{copy.packages[kind]} — {money(view.finance.packages[kind])}</span>
+          </label>
+        ))}
+      </fieldset>
       <dl className="grid gap-3 sm:grid-cols-2">
-        <Info label={copy.total} value={view.finance.priceConfigured ? money(view.finance.totalCents) : copy.priceMissing} />
+        <Info label={copy.total} value={view.finance.priceConfigured && view.finance.packageKind ? money(view.finance.totalCents) : copy.packageMissing} />
         <Info label={copy.currency} value={view.finance.currency} />
         <Info label={copy.paid} value={money(view.finance.paidCents)} />
-        <Info label={copy.balance} value={view.finance.balanceCents == null ? copy.priceMissing : money(view.finance.balanceCents)} />
+        <Info label={copy.balance} value={view.finance.balanceCents == null ? copy.packageMissing : money(view.finance.balanceCents)} />
         <Info label={copy.lastPayment} value={formatWhen(view.finance.lastPaymentOn, locale)} />
         <Info label={copy.verification} value={view.finance.payments.some((payment) => payment.status === "verificado") ? copy.payStatus.verificado : copy.payStatus.pendiente} />
       </dl>
@@ -249,28 +263,11 @@ function DocsStep({ view, copy, onView, onError }: { view: CoupleView; copy: Mes
         <p className="mt-2 text-sm text-[#1A4468]">{copy.waiverLegal}</p>
         {!view.waiver.configured ? <p className="mt-3 font-semibold">{copy.waiverMissing}</p> : (
           <div className="mt-3 grid gap-3">
+            <p className="text-sm font-semibold text-[#9F1239]">{copy.waiverProvisional}</p>
             <a className="underline" href="/api/waiver" target="_blank" rel="noreferrer">{copy.openWaiver}</a>
-            {!view.waiver.providerConfigured ? <p className="text-sm">{copy.providerOff}</p> : null}
+            <p className="text-sm">{copy.providerOff}</p>
             {(["esposo", "esposa"] as const).map((role) => (
-              <div key={role} className="rounded-2xl bg-[#F7FCFF] p-3">
-                <p className="font-semibold">{role === "esposo" ? copy.husband : copy.wife}</p>
-                <p className="text-sm">{copy.status[view.waiver.spouses[role].status as keyof Messages["status"]] ?? view.waiver.spouses[role].status}</p>
-                {view.waiver.providerConfigured ? (
-                  <Button type="button" className="mt-2 h-11" onClick={async () => {
-                    try {
-                      const result = await api<{ signingUrl: string | null; view: CoupleView }>("/api/waiver", {
-                        method: "POST",
-                        body: JSON.stringify({ participantId: view.spouses[role].id }),
-                      });
-                      onView(result.view);
-                      if (result.signingUrl) window.location.href = result.signingUrl;
-                    } catch (caught) {
-                      onError(text(caught, copy));
-                    }
-                  }}>{copy.openWaiver}</Button>
-                ) : null}
-                {view.waiver.spouses[role].signedName ? <a className="mt-2 block underline" href={`/api/waiver/${view.spouses[role].id}`}>{copy.download}</a> : null}
-              </div>
+              <WaiverSignForm key={role} role={role} view={view} copy={copy} onView={onView} onError={onError} />
             ))}
           </div>
         )}
@@ -305,19 +302,18 @@ function DocsStep({ view, copy, onView, onError }: { view: CoupleView; copy: Mes
 
 function PackStep({ view, copy, onView, onError }: { view: CoupleView; copy: Messages; onView: (view: CoupleView) => void; onError: (value: string) => void }) {
   const groups = ["ropa", "accesorios", "documentos", "evento"] as const;
+  const spouse = view.spouses.esposa;
   return (
     <section className="grid gap-4">
       <div>
         <h2 className="text-2xl">{copy.packingTitle}</h2>
         <p className="mt-2 text-[#1A4468]">{copy.packingSubtitle}</p>
+        <p className="mt-3 rounded-2xl bg-[#FFF1F2] p-3 text-sm font-semibold text-[#9F1239]">{copy.packingWifeNote}</p>
         <ul className="mt-3 list-disc pl-5 text-sm text-[#1A4468]">{copy.tips.map((tip) => <li key={tip}>{tip}</li>)}</ul>
         <p className="mt-2 text-sm">{copy.winterNote}</p>
       </div>
-      {(["esposo", "esposa"] as const).map((role) => {
-        const spouse = view.spouses[role];
-        return (
-          <article key={role} className="rounded-3xl border border-[#C5E4F2] bg-white p-4">
-            <h3 className="text-xl">{role === "esposo" ? copy.husband : copy.wife} · {spouse.packingChecked}/{view.packing.items.length}</h3>
+      <article className="rounded-3xl border border-[#C5E4F2] bg-white p-4">
+            <h3 className="text-xl">{copy.wife} · {spouse.packingChecked}/{view.packing.items.length}</h3>
             {groups.map((group) => (
               <div key={group} className="mt-3">
                 <h4 className="font-semibold">{copy.groups[group]}</h4>
@@ -359,8 +355,6 @@ function PackStep({ view, copy, onView, onError }: { view: CoupleView; copy: Mes
               <span>{copy.packingAck}</span>
             </label>
           </article>
-        );
-      })}
       <a className="inline-flex h-12 items-center justify-center rounded-xl border border-[#073B69] px-4" href="/api/maleta">{copy.packingPdf}</a>
     </section>
   );
@@ -377,12 +371,13 @@ function ConfirmStep({ view, copy, locale, onView }: { view: CoupleView; copy: M
       <Info label={copy.wife} value={view.spouses.esposa.fullName} />
       <Info label={copy.city} value={`${view.city}, ${view.country}`} />
       <Info label={copy.sizes} value={`${view.spouses.esposo.shirtSize}/${view.spouses.esposo.jacketSize} · ${view.spouses.esposa.shirtSize}/${view.spouses.esposa.jacketSize}`} />
-      <Info label={copy.balance} value={view.finance.balanceCents == null ? copy.priceMissing : formatMoney(view.finance.balanceCents, view.finance.currency, locale)} />
+      <Info label={copy.balance} value={view.finance.balanceCents == null ? copy.packageMissing : formatMoney(view.finance.balanceCents, view.finance.currency, locale)} />
       <Info label={copy.blocks.invitation} value={copy.status[view.invitation.status as keyof Messages["status"]] ?? view.invitation.status} />
       <Info label={copy.blocks.waiver} value={`${view.waiver.spouses.esposo.status} / ${view.waiver.spouses.esposa.status}`} />
       <Info label={copy.blocks.semaforo} value={`${view.spouses.esposo.semaforoStatus} / ${view.spouses.esposa.semaforoStatus}`} />
-      <Info label={copy.blocks.packing} value={`${view.spouses.esposo.packingAck ? copy.status.completado : copy.status.pendiente} / ${view.spouses.esposa.packingAck ? copy.status.completado : copy.status.pendiente}`} />
+      <Info label={copy.blocks.packing} value={view.spouses.esposa.packingAck ? copy.status.completado : copy.status.pendiente} />
       <p className="text-sm text-[#1A4468]">{copy.certificateHint}</p>
+      <p className="text-sm font-semibold">{view.progress.percent === 100 && view.status === "completado" ? copy.certificateQr : copy.certificateNoQr}</p>
       <a className="inline-flex h-12 items-center justify-center rounded-xl bg-[#073B69] px-4 text-[#F7FCFF]" href="/api/constancia">{copy.certificate}</a>
       {view.deletionRequested ? <p role="status">{copy.deleteAsked}</p> : (
         <Button type="button" variant="outline" onClick={async () => onView(await api("/api/eliminacion", { method: "POST" }))}>{copy.deleteAsk}</Button>
@@ -415,12 +410,80 @@ function spousePayload(view: CoupleView, role: SpouseRole) {
   };
 }
 
-async function saveModality(view: CoupleView, modality: "total" | "cuotas", claimPaidInFull: boolean, onView: (view: CoupleView) => void, onError: (value: string) => void, copy: Messages) {
+async function savePackage(packageKind: "general" | "hotel", onView: (view: CoupleView) => void, onError: (value: string) => void, copy: Messages) {
   try {
-    onView(await api("/api/pagos", { method: "POST", body: JSON.stringify({ kind: "modalidad", modality, claimPaidInFull }) }));
+    onView(await api("/api/pagos", { method: "POST", body: JSON.stringify({ kind: "paquete", packageKind }) }));
   } catch (caught) {
     onError(text(caught, copy));
   }
+}
+
+async function saveModality(view: CoupleView, modality: "total" | "cuotas", claimPaidInFull: boolean, onView: (view: CoupleView) => void, onError: (value: string) => void, copy: Messages) {
+  try {
+    onView(await api("/api/pagos", { method: "POST", body: JSON.stringify({ kind: "modalidad", modality, claimPaidInFull, packageKind: view.finance.packageKind || undefined }) }));
+  } catch (caught) {
+    onError(text(caught, copy));
+  }
+}
+
+function WaiverSignForm({
+  role,
+  view,
+  copy,
+  onView,
+  onError,
+}: {
+  role: SpouseRole;
+  view: CoupleView;
+  copy: Messages;
+  onView: (view: CoupleView) => void;
+  onError: (value: string) => void;
+}) {
+  const spouse = view.spouses[role];
+  const signed = view.waiver.spouses[role];
+  const [signedName, setSignedName] = useState(signed.signedName || spouse.fullName);
+  const [printedName, setPrintedName] = useState(signed.signedName || spouse.fullName);
+  const [signedOn, setSignedOn] = useState(new Date().toISOString().slice(0, 10));
+  return (
+    <form
+      className="grid gap-2 rounded-2xl bg-[#F7FCFF] p-3"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        try {
+          const result = await api<{ signingUrl: string | null; view: CoupleView }>("/api/waiver", {
+            method: "POST",
+            body: JSON.stringify({ participantId: spouse.id, signedName, printedName, signedOn }),
+          });
+          onView(result.view);
+          if (result.signingUrl) window.location.href = result.signingUrl;
+        } catch (caught) {
+          onError(text(caught, copy));
+        }
+      }}
+    >
+      <p className="font-semibold">{role === "esposo" ? copy.husband : copy.wife}</p>
+      <p className="text-sm">{copy.status[signed.status as keyof Messages["status"]] ?? signed.status}</p>
+      <label className="grid gap-1 text-sm">{copy.waiverSignName}<Input className="h-12" value={signedName} onChange={(event) => setSignedName(event.target.value)} required minLength={3} /></label>
+      <label className="grid gap-1 text-sm">{copy.waiverPrintName}<Input className="h-12" value={printedName} onChange={(event) => setPrintedName(event.target.value)} required minLength={3} /></label>
+      <label className="grid gap-1 text-sm">{copy.waiverDate}<Input className="h-12" type="date" value={signedOn} onChange={(event) => setSignedOn(event.target.value)} required /></label>
+      <Button type="submit" className="h-11">{copy.waiverSignSubmit}</Button>
+      {view.waiver.providerConfigured ? (
+        <Button type="button" variant="outline" className="h-11" onClick={async () => {
+          try {
+            const result = await api<{ signingUrl: string | null; view: CoupleView }>("/api/waiver", {
+              method: "POST",
+              body: JSON.stringify({ participantId: spouse.id }),
+            });
+            onView(result.view);
+            if (result.signingUrl) window.location.href = result.signingUrl;
+          } catch (caught) {
+            onError(text(caught, copy));
+          }
+        }}>{copy.openWaiver}</Button>
+      ) : null}
+      {signed.status === "firmado" ? <a className="mt-1 block underline" href={`/api/waiver/${spouse.id}`}>{copy.download}</a> : null}
+    </form>
+  );
 }
 
 async function choose(needed: boolean, onView: (view: CoupleView) => void, onError: (value: string) => void, copy: Messages) {

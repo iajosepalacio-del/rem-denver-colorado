@@ -15,15 +15,21 @@ export const POST = guard(async (request) => {
   if (kind === "ack") {
     const parsed = packingAckSchema.safeParse(body);
     if (!parsed.success) return fail(400, "validacion");
-    const view = await acknowledgePack(coupleId, parsed.data.participantId);
-    if (!view) return fail(404, "no_encontrado");
-    return json(view);
+    const result = await acknowledgePack(coupleId, parsed.data.participantId);
+    if ("error" in result) {
+      const code = result.error;
+      return fail(code === "prohibido" ? 403 : 404, code);
+    }
+    return json(result.view);
   }
   const parsed = packingToggleSchema.safeParse(body);
   if (!parsed.success) return fail(400, "validacion");
-  const view = await togglePack(coupleId, parsed.data.participantId, parsed.data.itemKey, parsed.data.checked);
-  if (!view) return fail(404, "no_encontrado");
-  return json(view);
+  const result = await togglePack(coupleId, parsed.data.participantId, parsed.data.itemKey, parsed.data.checked);
+  if ("error" in result) {
+    const code = result.error;
+    return fail(code === "prohibido" ? 403 : 404, code);
+  }
+  return json(result.view);
 });
 
 export const GET = guard(async (request) => {

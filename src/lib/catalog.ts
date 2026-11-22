@@ -98,6 +98,20 @@ export const COUNTRIES = [
 
 export const PAYMENT_METHODS = ["transferencia", "efectivo", "otro"] as const;
 
+export const PACKAGE_KINDS = ["general", "hotel"] as const;
+export type PackageKind = (typeof PACKAGE_KINDS)[number];
+
+export const PACKAGES: Record<PackageKind, { cents: number }> = {
+  general: { cents: 108_000 },
+  hotel: { cents: 128_000 },
+};
+
+export const PACKING_OWNER_ROLE = "esposa" as const;
+
+export const WAIVER_EXAMPLE_PATH = "content/waiver-ejemplo-provisional.pdf";
+export const WAIVER_EXAMPLE_VERSION = "ejemplo-provisional-1";
+export const WAIVER_EXAMPLE_FILE_NAME = "waiver-ejemplo-provisional.pdf";
+
 export const OFFICIAL_SEMAFORO_URL = "https://matrimoniosrem.com/semaforo-rem-paso-1/";
 export const OFFICIAL_SITE = "https://matrimoniosrem.com";
 export const ORGANIZER_EMAIL = "remdenvercolorado@gmail.com";

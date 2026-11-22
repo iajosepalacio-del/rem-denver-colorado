@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { sniffFile } from "../src/lib/files.ts";
-import { assess, balanceCents, formatPublicCode, sumVerified } from "../src/lib/progress.ts";
+import { assess, balanceCents, formatPublicCode, shouldEmbedCertificateQr, sumVerified } from "../src/lib/progress.ts";
 import type { AssessInput } from "../src/lib/progress.ts";
 
 const base: AssessInput = {
   personalComplete: true,
   modality: "total",
+  packageSelected: true,
   priceConfigured: true,
   totalCents: 100000,
   verifiedPaidCents: 100000,
@@ -17,8 +18,8 @@ const base: AssessInput = {
   waiverStatuses: ["firmado", "firmado"],
   semaforoReady: true,
   semaforoStatuses: ["enviado", "enviado"],
-  packingAcks: 2,
-  packingPeople: 2,
+  packingAcks: 1,
+  packingPeople: 1,
 };
 
 test("el porcentaje llega a 100 solo cuando todos los requisitos aplican", () => {
@@ -51,6 +52,18 @@ test("sin precio oficial el pago no se da por completo", () => {
   const result = assess({ ...base, priceConfigured: false, verifiedPaidCents: 0 });
   assert.notEqual(result.status, "completado");
   assert.equal(result.blocks.find((block) => block.key === "payment")?.state, "en_proceso");
+});
+
+test("sin paquete el pago no se da por completo", () => {
+  const result = assess({ ...base, packageSelected: false, verifiedPaidCents: 0 });
+  assert.notEqual(result.status, "completado");
+  assert.equal(result.blocks.find((block) => block.key === "payment")?.state, "en_proceso");
+});
+
+test("el QR de la constancia solo existe al 100% completado", () => {
+  assert.equal(shouldEmbedCertificateQr(100, "completado"), true);
+  assert.equal(shouldEmbedCertificateQr(99, "completado"), false);
+  assert.equal(shouldEmbedCertificateQr(100, "en_proceso"), false);
 });
 
 test("el codigo publico no es un uuid", () => {

@@ -10,11 +10,11 @@ Sitio de referencia: [matrimoniosrem.com](https://matrimoniosrem.com).
 
 1. Crear su inscripción y recibir un código `REM-2027-0001` y una clave de acceso. La clave se muestra una vez.
 2. Volver a entrar en **Consultar mi inscripción** con el código, el correo de uno de los cónyuges y la clave.
-3. Completar datos, declarar pagos y subir comprobantes PDF, JPG o PNG.
+3. Completar datos, elegir paquete (tarifa general o con hotel), declarar pagos y subir comprobantes PDF, JPG o PNG.
 4. Decidir si necesita carta de invitación del organizador. Responder **NO** cuenta como «No aplica» y no bloquea el registro.
-5. Abrir el waiver cuando el organizador haya cargado el PDF. Sin PDF aparece «Documento pendiente de configuración».
+5. Abrir el waiver de ejemplo provisional y firmar con **Name Signature**, **Name Print** y **Date**. El organizador puede sustituir ese PDF por el waiver oficial.
 6. Abrir el SEMÁFORO oficial o, si el organizador cargó las preguntas, responderlas con una clave propia de cada cónyuge.
-7. Marcar la maleta de invierno y descargar la lista y la constancia.
+7. Preparar la maleta: **solo la esposa** marca la lista. Es obligatorio. Luego se descarga la constancia. El código QR aparece únicamente si el registro llegó al 100%.
 
 Una pareja no puede leer la inscripción de otra. Las respuestas del SEMÁFORO no se muestran al otro cónyuge ni salen en el correo de confirmación.
 
@@ -30,7 +30,7 @@ La ruta privada es `/admin`.
 | questionnaire | Ver, cargar preguntas y exportar respuestas |
 | viewer | Ver el resumen, sin editar |
 
-El precio oficial empieza sin configurar (`price_configured = false`). Un administrador lo define. Marcar «Pago total realizado» no verifica el pago: el saldo es el valor oficial menos la suma de pagos en estado **verificado**.
+Hay dos paquetes oficiales por pareja: **TARIFA GENERAL $1,080** y **PAQUETE CON HOTEL $1,280**. La pareja elige uno en el paso de pagos. Marcar «Pago total realizado» no verifica el pago: el saldo es el valor del paquete elegido menos la suma de pagos en estado **verificado**. Un administrador puede ajustar ambos montos en el panel.
 
 ## Arranque local
 
@@ -59,9 +59,9 @@ La cabecera usa el isotipo y el logotipo publicados en [matrimoniosrem.com](http
 
 Estas piezas no se simulan. La pantalla y `/api/salud` dicen si están conectadas.
 
-- **Precio oficial del evento.** Lo define un administrador. Hasta entonces el pago no puede quedar completo.
-- **PDF oficial del waiver.** Sin él no hay firma.
-- **Proveedor de firma.** Hacen falta `SIGNATURE_PROVIDER_NAME`, `SIGNATURE_API_BASE` (https) y `SIGNATURE_API_KEY` para enviar un sobre. Un trazo dibujado sobre el PDF no se trata como firma válida. Si solo existe el nombre del proveedor, un administrador puede archivar el PDF que ese proveedor devolvió, con su referencia.
+- **Paquetes.** TARIFA GENERAL $1,080 y PAQUETE CON HOTEL $1,280 por pareja. El saldo usa el paquete elegido.
+- **PDF del waiver.** Hay un ejemplo provisional (Shipping Waiver) para practicar Name Signature, Name Print y Date. Eso no es firma notarial. El organizador puede cargar el PDF oficial y sustituirlo.
+- **Proveedor de firma.** Hacen falta `SIGNATURE_PROVIDER_NAME`, `SIGNATURE_API_BASE` (https) y `SIGNATURE_API_KEY` para enviar un sobre electrónico. Si no está conectado, se usa el formulario del ejemplo. Si solo existe el nombre del proveedor, un administrador puede archivar el PDF que ese proveedor devolvió, con su referencia.
 - **Las 50 preguntas del SEMÁFORO.** No están inventadas ni copiadas. La modalidad inicial abre [el formulario oficial](https://matrimoniosrem.com/semaforo-rem-paso-1/) y aclara que abrirlo no equivale a terminarlo. La modalidad interna se carga con el JSON del organizador. Ver `docs/cuestionario.md`.
 - **Correo.** Sin SMTP el mensaje queda en el buzón interno con estado `pendiente_configuracion`.
 - **Google Drive y Sheets.** Sin credenciales el estado es `no_configurado`. Ver `docs/google-oauth.md`.

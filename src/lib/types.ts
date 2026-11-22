@@ -47,6 +47,8 @@ export type CoupleView = {
     currency: string;
     priceConfigured: boolean;
     totalCents: number;
+    packageKind: "" | "general" | "hotel";
+    packages: { general: number; hotel: number };
     modality: "" | "total" | "cuotas";
     claimPaidInFull: boolean;
     paidCents: number;

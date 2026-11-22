@@ -107,6 +107,13 @@ export function Landing({ event, locale }: { event: EventConfig; locale: Locale 
               <dl className="mt-6 grid gap-4 text-lg">
                 <div className="glass rounded-2xl p-4"><dt className="text-sm text-[#D7F6FF]">{copy.registeredOn}</dt><dd>{range}</dd></div>
                 <div className="glass rounded-2xl p-4"><dt className="text-sm text-[#D7F6FF]">{place}</dt><dd className="flex items-center gap-2"><Flag /> {event.city}, {event.region}</dd></div>
+                <div className="glass rounded-2xl p-4">
+                  <dt className="text-sm text-[#D7F6FF]">{copy.packagesTitle}</dt>
+                  <dd className="mt-2 grid gap-1">
+                    <span>{copy.packageGeneral} · $1,080 {copy.packagePerCouple}</span>
+                    <span>{copy.packageHotel} · $1,280 {copy.packagePerCouple}</span>
+                  </dd>
+                </div>
               </dl>
             </div>
             <div>

@@ -325,6 +325,7 @@ export async function exportCsv() {
     "estado",
     "progreso",
     "modalidad",
+    "paquete",
     "total",
     "pagado",
     "saldo",
@@ -354,6 +355,7 @@ export async function exportCsv() {
       view.status,
       String(view.progress.percent),
       view.finance.modality,
+      view.finance.packageKind,
       view.finance.priceConfigured ? (view.finance.totalCents / 100).toFixed(2) : "",
       (view.finance.paidCents / 100).toFixed(2),
       view.finance.balanceCents == null ? "" : (view.finance.balanceCents / 100).toFixed(2),
@@ -362,7 +364,7 @@ export async function exportCsv() {
       view.waiver.spouses.esposa.status,
       view.spouses.esposo.semaforoStatus,
       view.spouses.esposa.semaforoStatus,
-      view.spouses.esposo.packingAck ? "revisada" : "pendiente",
+      "n/a",
       view.spouses.esposa.packingAck ? "revisada" : "pendiente",
     ]
       .map((cell) => `"${cell.replace(/"/g, '""')}"`)
@@ -424,6 +426,7 @@ export async function saveEvent(admin: AdminSession, input: {
   eventYear: number;
   currency: string;
   price: number;
+  hotelPrice: number;
   priceConfigured: boolean;
   shirtSizes: string[];
   jacketSizes: string[];
@@ -438,9 +441,9 @@ export async function saveEvent(admin: AdminSession, input: {
     `update events set
       slogan = $2, subtitle = $3, emotional_line = $4, city = $5, region = $6, country = $7,
       starts_on = $8, ends_on = $9, event_year = $10, currency = $11, price_cents = $12,
-      price_configured = $13, shirt_sizes = $14::jsonb, jacket_sizes = $15::jsonb,
-      semaforo_mode = $16, semaforo_external_url = $17, semaforo_per_spouse = $18,
-      semaforo_group_size = $19, waiver_requires_both = $20, retention_months = $21, updated_at = now()
+      hotel_price_cents = $13, price_configured = $14, shirt_sizes = $15::jsonb, jacket_sizes = $16::jsonb,
+      semaforo_mode = $17, semaforo_external_url = $18, semaforo_per_spouse = $19,
+      semaforo_group_size = $20, waiver_requires_both = $21, retention_months = $22, updated_at = now()
      where id = $1`,
     [
       EVENT_ID,
@@ -455,6 +458,7 @@ export async function saveEvent(admin: AdminSession, input: {
       input.eventYear,
       input.currency.toUpperCase(),
       Math.round(input.price * 100),
+      Math.round(input.hotelPrice * 100),
       input.priceConfigured,
       JSON.stringify(input.shirtSizes),
       JSON.stringify(input.jacketSizes),

@@ -48,12 +48,34 @@ test("una pareja no ve datos de otra y el saldo ignora casillas", async () => {
   assert.equal(view.code, first.code);
   assert.equal(JSON.stringify(view).includes("dos.esposo@example.com"), false);
   assert.equal(view.finance.balanceCents, null);
+  assert.equal(view.waiver.configured, true);
+  assert.equal(view.waiver.fileName, "waiver-ejemplo-provisional.pdf");
+  assert.equal(view.progress.blocks.find((block) => block.key === "packing")?.ratio, 0);
+
+  const husbandPack = await couples.togglePack(first.coupleId, view.spouses.esposo.id, "gorro", true);
+  assert.equal("error" in husbandPack && husbandPack.error === "prohibido", true);
+  const wifePack = await couples.acknowledgePack(first.coupleId, view.spouses.esposa.id);
+  assert.equal("view" in wifePack, true);
+  if ("view" in wifePack) {
+    assert.equal(wifePack.view.spouses.esposa.packingAck, true);
+    assert.equal(wifePack.view.progress.blocks.find((block) => block.key === "packing")?.state, "completado");
+  }
+  const signed = await couples.signWaiverExample(first.coupleId, {
+    participantId: view.spouses.esposo.id,
+    signedName: "Carlos Uno Ficticio",
+    printedName: "Carlos Uno Ficticio",
+    signedOn: "2026-11-21",
+  });
+  assert.equal("error" in signed, false);
+  if (!("error" in signed)) {
+    assert.equal(signed.view.waiver.spouses.esposo.status, "firmado");
+  }
 
   const login = await couples.loginCouple(first.code, "uno.esposa@example.com", first.accessKey);
   assert.equal(login, first.coupleId);
   assert.equal(await couples.loginCouple(first.code, "dos.esposo@example.com", first.accessKey), null);
 
-  await couples.setModality(first.coupleId, "total", true);
+  await couples.setModality(first.coupleId, "total", true, "general");
   const payment = await couples.addPayment(first.coupleId, {
     amount: 150,
     paidOn: "2027-01-02",
@@ -85,6 +107,7 @@ test("una pareja no ve datos de otra y el saldo ignora casillas", async () => {
       eventYear: 2027,
       currency: "USD",
       price: 500,
+      hotelPrice: 1280,
       priceConfigured: true,
       shirtSizes: ["XS", "S", "M", "L", "XL", "XXL", "Otra / Por confirmar"],
       jacketSizes: ["XS", "S", "M", "L", "XL", "XXL", "Otra / Por confirmar"],
