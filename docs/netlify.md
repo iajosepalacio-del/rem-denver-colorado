@@ -5,7 +5,7 @@ La aplicación es Next.js 15 con Route Handlers de Node. En Netlify use el runti
 ## Requisitos
 
 - Node 22.
-- `DATABASE_URL` de PostgreSQL. En Neon u otro proveedor con conexión directa y con pool, defina también `DATABASE_URL_UNPOOLED` para las migraciones.
+- `DATABASE_URL` de PostgreSQL, o la base de Netlify (`NETLIFY_DATABASE_URL`). En Neon u otro proveedor con conexión directa y con pool, defina también `DATABASE_URL_UNPOOLED` para las migraciones.
 - `ADMIN_BOOTSTRAP_TOKEN` antes de crear el primer administrador. En producción no hay alta local sin ese token.
 
 PGlite no sirve en Netlify: el disco de una función no conserva `.data/pglite`. Sin `DATABASE_URL` los registros se perderían entre invocaciones.

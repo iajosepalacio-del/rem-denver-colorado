@@ -3,7 +3,15 @@ import { dirname } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import pg from "pg";
 
-const databaseUrl = process.env.DATABASE_URL?.trim() ?? "";
+function envUrl(...names: string[]) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+const databaseUrl = envUrl("DATABASE_URL", "NETLIFY_DATABASE_URL");
 const globalState = globalThis as unknown as {
   __remPool?: pg.Pool;
   __remLocal?: Promise<PGlite>;

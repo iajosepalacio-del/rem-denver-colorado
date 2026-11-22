@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { sql } from "../lib/db";
+import { sql, usingPostgres } from "../lib/db";
 import { hashSecret, newId, newToken, safeEqual, sha256, verifySecret } from "../lib/secrets";
 import type { AdminSession } from "../lib/types";
 
@@ -93,7 +93,7 @@ export function allows(role: AdminSession["role"], action: string) {
 
 export function localBootstrapAllowed(request: Request) {
   if (process.env.NODE_ENV === "production") return false;
-  if (process.env.DATABASE_URL) return false;
+  if (usingPostgres()) return false;
   const host = request.headers.get("host") ?? "";
   return host.startsWith("127.0.0.1") || host.startsWith("localhost") || host.startsWith("[::1]");
 }

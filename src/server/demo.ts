@@ -1,11 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { sql } from "../lib/db";
+import { sql, usingPostgres } from "../lib/db";
 import { newAccessKey } from "../lib/secrets";
 import { createCouple } from "./couples";
 
 export async function ensureDemo() {
   if (process.env.SEED_DEMO !== "1") return;
-  if (process.env.DATABASE_URL) return;
+  if (usingPostgres()) return;
   if (process.env.NODE_ENV === "production") return;
   const existing = await sql("select id from couples where is_demo = true limit 1");
   if (existing.length > 0) return;

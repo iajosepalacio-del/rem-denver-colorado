@@ -1,7 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 import pg from "pg";
 
-const url = process.env.DATABASE_URL?.trim() ?? "";
+const url =
+  process.env.DATABASE_URL?.trim() ||
+  process.env.NETLIFY_DATABASE_URL?.trim() ||
+  process.env.NETLIFY_DATABASE_URL_UNPOOLED?.trim() ||
+  "";
 const files = (await readdir("migrations").catch(() => []))
   .filter((f) => f.endsWith(".sql"))
   .sort();
@@ -19,7 +23,10 @@ function statements(sql) {
 }
 
 const client = new pg.Client({
-  connectionString: process.env.DATABASE_URL_UNPOOLED?.trim() || url,
+  connectionString:
+    process.env.DATABASE_URL_UNPOOLED?.trim() ||
+    process.env.NETLIFY_DATABASE_URL_UNPOOLED?.trim() ||
+    url,
 });
 await client.connect();
 try {
