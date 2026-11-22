@@ -3,8 +3,10 @@ import pg from "pg";
 
 const url =
   process.env.DATABASE_URL?.trim() ||
+  process.env.NETLIFY_DB_URL?.trim() ||
   process.env.NETLIFY_DATABASE_URL?.trim() ||
   process.env.NETLIFY_DATABASE_URL_UNPOOLED?.trim() ||
+  process.env.DATABASE_URL_UNPOOLED?.trim() ||
   "";
 const files = (await readdir("migrations").catch(() => []))
   .filter((f) => f.endsWith(".sql"))
@@ -15,17 +17,11 @@ if (url === "" || files.length === 0) {
   process.exit(0);
 }
 
-function statements(sql) {
-  return sql
-    .split(/;\s*(?:\r?\n|$)/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0 && !part.split("\n").every((line) => line.trim().startsWith("--") || line.trim() === ""));
-}
-
 const client = new pg.Client({
   connectionString:
     process.env.DATABASE_URL_UNPOOLED?.trim() ||
     process.env.NETLIFY_DATABASE_URL_UNPOOLED?.trim() ||
+    process.env.NETLIFY_DB_URL?.trim() ||
     url,
 });
 await client.connect();
@@ -42,9 +38,7 @@ try {
     await client.query("begin");
     try {
       const sql = await readFile(`migrations/${file}`, "utf8");
-      for (const statement of statements(sql)) {
-        await client.query(statement);
-      }
+      await client.query(sql);
       await client.query("insert into schema_migrations (name) values ($1)", [file]);
       await client.query("commit");
       console.log(`migrate: applied ${file}`);

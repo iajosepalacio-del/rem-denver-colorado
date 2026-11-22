@@ -44,3 +44,6 @@ next-env.d.ts
 # local database, uploads and generated demo credentials
 .data
 
+
+# Local Netlify folder
+.netlify

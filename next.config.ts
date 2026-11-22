@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@electric-sql/pglite", "pg"],
+  serverExternalPackages: [
+    "@electric-sql/pglite",
+    "@netlify/database",
+    "@neondatabase/serverless",
+    "pg",
+    "ws",
+  ],
+  outputFileTracingIncludes: {
+    "/*": ["./migrations/**/*"],
+  },
   poweredByHeader: false,
   async headers() {
     return [

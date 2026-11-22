@@ -3,6 +3,8 @@ import test from "node:test";
 
 process.env.PGLITE_DIR = ":memory:";
 process.env.DATABASE_URL = "";
+process.env.NETLIFY_DB_URL = "";
+process.env.NETLIFY_DATABASE_URL = "";
 process.env.SEED_DEMO = "0";
 process.env.NODE_ENV = "test";
 

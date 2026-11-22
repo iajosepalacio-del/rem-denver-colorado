@@ -5,10 +5,10 @@ La aplicación es Next.js 15 con Route Handlers de Node. En Netlify use el runti
 ## Requisitos
 
 - Node 22.
-- `DATABASE_URL` de PostgreSQL, o la base de Netlify (`NETLIFY_DATABASE_URL`). En Neon u otro proveedor con conexión directa y con pool, defina también `DATABASE_URL_UNPOOLED` para las migraciones.
+- Postgres. En Netlify el runtime inyecta `NETLIFY_DB_URL` cuando el paquete `@netlify/database` está instalado. También se aceptan `DATABASE_URL`, `NETLIFY_DATABASE_URL` y las variantes `_UNPOOLED` para migraciones.
 - `ADMIN_BOOTSTRAP_TOKEN` antes de crear el primer administrador. En producción no hay alta local sin ese token.
 
-PGlite no sirve en Netlify: el disco de una función no conserva `.data/pglite`. Sin `DATABASE_URL` los registros se perderían entre invocaciones.
+PGlite no conserva registros entre invocaciones de una función. La aplicación aplica las migraciones al primer contacto con Postgres en runtime, porque `NETLIFY_DB_URL` a menudo llega solo entonces. Si Postgres no está inyectado, el arranque usa `/tmp` para no devolver 500, pero esos datos no son la fuente de verdad.
 
 ## Configuración
 
@@ -18,7 +18,7 @@ PGlite no sirve en Netlify: el disco de una función no conserva `.data/pglite`.
 npm install -D @netlify/plugin-nextjs
 ```
 
-El build ejecuta `next build` y después `scripts/migrate.mjs`. Ese script no hace nada si `DATABASE_URL` está vacío. En Netlify debe estar definido en el entorno del build y del runtime.
+El build ejecuta `next build` y después `scripts/migrate.mjs`. Ese script no hace nada si no hay URL de Postgres en el entorno del build. En Netlify las migraciones también se aplican al servir la primera petición.
 
 Suba el límite del cuerpo si el plan lo permite. La aplicación rechaza archivos de más de 5 MB antes de guardarlos, y también rechaza un `Content-Length` muy por encima de ese tope.
 
